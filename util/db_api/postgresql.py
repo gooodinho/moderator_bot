@@ -66,3 +66,7 @@ class Database:
         sql = "SELECT * FROM Admins WHERE "
         sql, parameters = self.format_args(sql, parameters=kwargs)
         return await self.execute(sql, *parameters, fetch_row=True)
+
+    async def count_users(self):
+        sql = "SELECT COUNT(*) FROM Admins"
+        return await self.execute(sql, fetch_val=True)
