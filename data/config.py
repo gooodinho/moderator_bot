@@ -4,6 +4,7 @@ env = Env()
 env.read_env()
 
 BOT_TOKEN = env.str("BOT_TOKEN")
+BOT_USERNAME = env.str("BOT_USERNAME")
 
 DEVELOPERS = env.list("DEVELOPERS")
 IP = env.str("ip")
