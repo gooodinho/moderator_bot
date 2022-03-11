@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import types
 from aiogram.dispatcher.filters.builtin import CommandStart
 
@@ -17,5 +19,6 @@ async def start_msg(message: types.Message):
         if str(telegram_id) in config.DEVELOPERS:
             await db.add_admin(full_name, user_name, telegram_id)
             await message.answer('You\'ve been promoted to admins')
+            logging.info(f'Add new admin - {user_name}')
         else:
             await message.answer('You aren\'t an admin')

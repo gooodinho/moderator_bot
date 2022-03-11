@@ -1,8 +1,9 @@
+import logging
 from typing import Union
 import asyncpg
 from asyncpg import Connection
 from asyncpg.pool import Pool
-
+from asyncpg.exceptions import UniqueViolationError
 from data import config
 
 
@@ -78,8 +79,15 @@ class Database:
     async def add_admin(self, full_name: str, username: str, telegram_id: int):
         sql = "INSERT INTO Admins (full_name, username, telegram_id) VALUES ($1, $2, $3)"
         parameters = (full_name, username, telegram_id)
-        return await self.execute(sql, *parameters, execute=True)
+        try:
+            await self.execute(sql, *parameters, execute=True)
+        except UniqueViolationError:
+            logging.error(f"UniqueViolationError: Admin '{username}' already exists")
 
     async def check_admin(self, telegram_id):
         sql = "SELECT EXISTS(SELECT * FROM Admins WHERE telegram_id=$1)"
         return await self.execute(sql, telegram_id, fetch_val=True)
+
+    async def get_admins(self):
+        sql = "SELECT telegram_id FROM Admins"
+        return await self.execute(sql, fetch=True)
