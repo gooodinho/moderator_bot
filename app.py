@@ -11,6 +11,7 @@ async def on_startup(dispatcher):
     logging.info("Connection created.")
     await db.create_table_admins()
     logging.info("Admin table created.")
+    # await db.drop_table_admins()
 
 if __name__ == '__main__':
     executor.start_polling(dp, on_startup=on_startup)

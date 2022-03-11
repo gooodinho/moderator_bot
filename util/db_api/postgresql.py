@@ -44,10 +44,14 @@ class Database:
         id SERIAL PRIMARY KEY,
         full_name VARCHAR(255) NOT NULL,
         username VARCHAR(255) NULL,
-        telegram_id BIGINT NOT NULL
+        telegram_id BIGINT NOT NULL UNIQUE
         );        
         """
 
+        await self.execute(sql, execute=True)
+
+    async def drop_table_admins(self):
+        sql = "DROP TABLE Admins"
         await self.execute(sql, execute=True)
 
     @staticmethod
@@ -70,3 +74,12 @@ class Database:
     async def count_users(self):
         sql = "SELECT COUNT(*) FROM Admins"
         return await self.execute(sql, fetch_val=True)
+
+    async def add_admin(self, full_name: str, username: str, telegram_id: int):
+        sql = "INSERT INTO Admins (full_name, username, telegram_id) VALUES ($1, $2, $3)"
+        parameters = (full_name, username, telegram_id)
+        return await self.execute(sql, *parameters, execute=True)
+
+    async def check_admin(self, telegram_id):
+        sql = "SELECT EXISTS(SELECT * FROM Admins WHERE telegram_id=$1)"
+        return await self.execute(sql, telegram_id, fetch_val=True)
