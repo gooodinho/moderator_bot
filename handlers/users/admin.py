@@ -9,7 +9,7 @@ from aiogram import types
 from util import get_random_string
 
 
-@dp.message_handler(IsPrivate(), AdminFilter(), Command('add_admin'))
+@dp.message_handler(Command('add_admin'), IsPrivate(), AdminFilter())
 async def add_admin(message: types.Message):
     admin = await db.select_admin(telegram_id=message.from_user.id)
     admin_id = admin.get("id")
@@ -23,3 +23,13 @@ async def add_admin(message: types.Message):
         admin_link = await db.get_admin_link(admin_id)
         await message.answer("You have already had active add link"
                              f"\n\nhttps://t.me/{config.BOT_USERNAME}?start={admin_link.get('code')}")
+
+
+@dp.message_handler(IsPrivate(), AdminFilter(), text='✍️ Add shortcut')
+async def add_shortcut():
+    pass
+
+
+@dp.message_handler(IsPrivate(), AdminFilter(), text='↙️ Show all shortcuts')
+async def show_all_shortcuts():
+    pass

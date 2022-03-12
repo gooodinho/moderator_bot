@@ -17,6 +17,9 @@ async def on_startup(dispatcher):
     # await db.drop_table_links()
     await db.create_table_links()
     logging.info("Links table created.")
+    # await db.drop_table_shortcuts()
+    await db.create_table_shortcuts()
+    logging.info("Shortcuts table created.")
     # await db.add_admin('test', 'test', 123123)
 
 if __name__ == '__main__':

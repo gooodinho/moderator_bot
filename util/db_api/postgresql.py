@@ -61,12 +61,26 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
+    async def create_table_shortcuts(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS Shortcuts (
+        id SERIAL PRIMARY KEY,
+        short VARCHAR(255) NOT NULL UNIQUE,
+        full_text TEXT NOT NULL
+        );
+        """
+        await self.execute(sql, execute=True)
+
     async def drop_table_admins(self):
         sql = "DROP TABLE Admins CASCADE"
         await self.execute(sql, execute=True)
 
     async def drop_table_links(self):
         sql = "DROP TABLE Links"
+        await self.execute(sql, execute=True)
+
+    async def drop_table_shortcuts(self):
+        sql = "DROP TABLE Shortcuts"
         await self.execute(sql, execute=True)
 
     @staticmethod
@@ -129,3 +143,18 @@ class Database:
     async def get_admin_link(self, admin_id: int):
         sql = "SELECT * FROM Links WHERE admin_id=$1"
         return await self.execute(sql, admin_id, fetch_row=True)
+
+    async def add_shortcut(self, short: str, full: str):
+        sql = "INSERT INTO Shortcuts (short, full) VALUES ($1, $2)"
+        parameters = (short, full)
+        try:
+            await self.execute(sql, *parameters, execute=True)
+            return True
+        except UniqueViolationError:
+            logging.error(f"UniqueViolationError: f '{short}' already exists")
+            return False
+
+    async def select_shortcut(self, **kwargs):
+        sql = "SELECT * FROM Shortcuts WHERE "
+        sql, parameters = self.format_args(sql, parameters=kwargs)
+        return await self.execute(sql, *parameters, fetch_row=True)

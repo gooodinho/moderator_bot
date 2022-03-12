@@ -5,4 +5,5 @@ from aiogram import types
 
 @dp.message_handler(IsGroup(), AdminFilter(), regexp='^!\S*$')
 async def change_shortcut(message: types.Message):
-    pass
+    await message.delete()
+    await message.answer("*")
