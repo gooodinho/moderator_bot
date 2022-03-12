@@ -145,7 +145,7 @@ class Database:
         return await self.execute(sql, admin_id, fetch_row=True)
 
     async def add_shortcut(self, short: str, full: str):
-        sql = "INSERT INTO Shortcuts (short, full) VALUES ($1, $2)"
+        sql = "INSERT INTO Shortcuts (short, full_text) VALUES ($1, $2)"
         parameters = (short, full)
         try:
             await self.execute(sql, *parameters, execute=True)
