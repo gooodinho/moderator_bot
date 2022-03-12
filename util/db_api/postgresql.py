@@ -51,8 +51,22 @@ class Database:
 
         await self.execute(sql, execute=True)
 
+    async def create_table_links(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS Links (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(100) NOT NULL,
+        admin_id INT REFERENCES Admins (id) ON DELETE CASCADE UNIQUE
+        );
+        """
+        await self.execute(sql, execute=True)
+
     async def drop_table_admins(self):
-        sql = "DROP TABLE Admins"
+        sql = "DROP TABLE Admins CASCADE"
+        await self.execute(sql, execute=True)
+
+    async def drop_table_links(self):
+        sql = "DROP TABLE Links"
         await self.execute(sql, execute=True)
 
     @staticmethod
@@ -91,3 +105,27 @@ class Database:
     async def get_admins(self):
         sql = "SELECT telegram_id FROM Admins"
         return await self.execute(sql, fetch=True)
+
+    async def add_link(self, code: str, admin_id: int):
+        sql = "INSERT INTO Links (code, admin_id) VALUES ($1, $2)"
+        parameters = (code, admin_id)
+        try:
+            await self.execute(sql, *parameters, execute=True)
+            return True
+        except UniqueViolationError:
+            logging.error(f"UniqueViolationError: Admin '{admin_id}' already has ref link")
+            return False
+
+    async def select_link(self, **kwargs):
+        sql = "SELECT * FROM Links WHERE "
+        sql, parameters = self.format_args(sql, parameters=kwargs)
+        return await self.execute(sql, *parameters, fetch_row=True)
+
+    async def delete_link(self, code: str, admin_id: int):
+        sql = "DELETE FROM Links WHERE code=$1 AND admin_id=$2"
+        parameters = (code, admin_id)
+        await self.execute(sql, *parameters, execute=True)
+
+    async def get_admin_link(self, admin_id: int):
+        sql = "SELECT * FROM Links WHERE admin_id=$1"
+        return await self.execute(sql, admin_id, fetch_row=True)
