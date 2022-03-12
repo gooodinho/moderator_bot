@@ -4,10 +4,11 @@ from aiogram import types
 from aiogram.dispatcher.filters.builtin import CommandStart
 
 from data import config
+from filters import IsPrivate
 from loader import dp, db, bot
 
 
-@dp.message_handler(CommandStart())
+@dp.message_handler(IsPrivate(), CommandStart())
 async def start_msg(message: types.Message):
     msg_args = message.get_args()
     full_name, user_name, telegram_id = message.from_user.full_name,\

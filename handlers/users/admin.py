@@ -1,6 +1,7 @@
 from aiogram.dispatcher.filters import Command
 
 from data import config
+from filters import IsPrivate
 from filters.is_admin import AdminFilter
 from loader import dp, db
 from aiogram import types
@@ -8,7 +9,7 @@ from aiogram import types
 from util import get_random_string
 
 
-@dp.message_handler(AdminFilter(), Command('add_admin'))
+@dp.message_handler(IsPrivate(), AdminFilter(), Command('add_admin'))
 async def add_admin(message: types.Message):
     admin = await db.select_admin(telegram_id=message.from_user.id)
     admin_id = admin.get("id")
