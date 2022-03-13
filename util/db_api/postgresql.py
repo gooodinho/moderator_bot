@@ -166,8 +166,18 @@ class Database:
         return math.ceil(quantity/config.PER_PAGE)
 
     async def select_shortcuts_range(self, page: int):
-        sql = "SELECT * FROM Shortcuts OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY"
+        sql = "SELECT * FROM Shortcuts ORDER BY id OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY"
         page -= 1
         page_offset = page * config.PER_PAGE
         parameters = (page_offset, config.PER_PAGE)
         return await self.execute(sql, *parameters, fetch=True)
+
+    async def edit_shortcut_short(self, short: str, sc_id: int):
+        sql = "UPDATE Shortcuts SET short=$1 WHERE id=$2"
+        parameters = (short, sc_id)
+        await self.execute(sql, *parameters, execute=True)
+
+    async def edit_shortcut_full_text(self, full_text: str, sc_id: int):
+        sql = "UPDATE Shortcuts SET full_text=$1 WHERE id=$2"
+        parameters = (full_text, sc_id)
+        await self.execute(sql, *parameters, execute=True)

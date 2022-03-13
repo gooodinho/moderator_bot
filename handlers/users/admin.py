@@ -10,6 +10,7 @@ from keyboards.default.cancel import get_cancel_keyboard
 from keyboards.default.confirm import get_confirm_keyboard
 from keyboards.default.full_text import get_full_text_keyboard
 from keyboards.default.main import get_main_keyboard
+from keyboards.inline.shortcut_edit import get_sc_edit_keyboard, shortcut_edit_callback
 from keyboards.inline.shortcut_info import get_sc_info_keyboard, shortcut_info_callback
 from keyboards.inline.shortcut_pagination import get_sc_pagination_keyboard, shortcut_callback, pagination_callback
 from loader import dp, db
@@ -115,7 +116,6 @@ async def show_shortcut_info(call: types.CallbackQuery, callback_data: dict):
     await call.answer(cache_time=4)
     sc_id = int(callback_data.get("id"))
     shortcut = await db.select_shortcut(id=sc_id)
-    print(shortcut)
     sc_info = f"""SHORTCUT INFO
 \n📍Short: {shortcut.get('short')}
 \n📍Full text: \n\n{shortcut.get('full_text')}
@@ -123,3 +123,121 @@ async def show_shortcut_info(call: types.CallbackQuery, callback_data: dict):
     await call.message.delete()
     await call.message.answer(sc_info, reply_markup=get_sc_info_keyboard(sc_id))
 
+
+@dp.callback_query_handler(shortcut_info_callback.filter(action='edit'))
+async def edit_shortcut_start(call: types.CallbackQuery, callback_data: dict):
+    sc_id = int(callback_data.get("id"))
+    await call.message.edit_reply_markup(reply_markup=get_sc_edit_keyboard(sc_id))
+
+
+@dp.callback_query_handler(shortcut_edit_callback.filter())
+async def edit_shortcut_choose(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    to_edit = callback_data.get('to_edit')
+    sc_id = int(callback_data.get('id'))
+    shortcut = await db.select_shortcut(id=sc_id)
+    if to_edit == 'back':
+        await call.message.edit_reply_markup(reply_markup=get_sc_info_keyboard(sc_id))
+    elif to_edit == 'short':
+        await state.set_state('edit_short')
+        await state.update_data(sc_id=sc_id)
+        await call.message.delete()
+        await call.message.answer(f"Send new Short\n\nOld Short - {shortcut.get('short')}",
+                                  reply_markup=get_cancel_keyboard())
+    elif to_edit == 'full':
+        await state.set_state('edit_full')
+        await state.update_data(sc_id=sc_id)
+        await call.message.delete()
+        await call.message.answer(f"Send new Full text\n\nOld Full text\n{shortcut.get('full_text')}",
+                                  reply_markup=get_cancel_keyboard())
+
+
+@dp.message_handler(state='edit_short')
+async def edit_short(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    sc_id = data.get("sc_id")
+    if message.text == '❌ Cancel':
+        shortcut = await db.select_shortcut(id=sc_id)
+        sc_info = f"""SHORTCUT INFO
+        \n📍Short: {shortcut.get('short')}
+        \n📍Full text: \n\n{shortcut.get('full_text')}
+        """
+        await state.finish()
+        await message.answer("Action canceled", reply_markup=get_main_keyboard())
+        await message.answer(sc_info, reply_markup=get_sc_edit_keyboard(sc_id))
+    else:
+        shortcut = await db.select_shortcut(short=message.text)
+        if shortcut is not None:
+            await message.answer('This shortcut already exists, try another one')
+        else:
+            await state.update_data(short=message.text)
+            await state.set_state('edit_short_confirm')
+            await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
+
+
+@dp.message_handler(state='edit_full')
+async def edit_full(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    sc_id = data.get("sc_id")
+    shortcut = await db.select_shortcut(id=sc_id)
+    if message.text == '❌ Cancel':
+        sc_info = f"""SHORTCUT INFO
+         \n📍Short: {shortcut.get('short')}
+         \n📍Full text: \n\n{shortcut.get('full_text')}
+         """
+        await state.finish()
+        await message.answer("Action canceled", reply_markup=get_main_keyboard())
+        await message.answer(sc_info, reply_markup=get_sc_edit_keyboard(sc_id))
+    else:
+        await state.update_data(full_text=message.parse_entities())
+        await state.set_state('edit_full_confirm')
+        await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
+
+
+@dp.message_handler(state='edit_short_confirm')
+async def confirm_edit(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    sc_id, short = data.get("sc_id"), data.get('short')
+    shortcut = await db.select_shortcut(id=sc_id)
+    if message.text == "✅ Yes":
+        await db.edit_shortcut_short(short, sc_id)
+        await state.finish()
+        old_short = shortcut.get("short")
+        await message.answer(f'The shortcut ({old_short}->{short}) was successfully updated 🦄',
+                             reply_markup=get_main_keyboard())
+
+    elif message.text == "🚫 No":
+        await message.answer('Send new Short', reply_markup=get_cancel_keyboard())
+        await state.set_state('edit_short')
+
+    elif message.text == "❌ Cancel":
+        sc_info = f"""SHORTCUT INFO
+         \n📍Short: {shortcut.get('short')}
+         \n📍Full text: \n\n{shortcut.get('full_text')}
+         """
+        await state.finish()
+        await message.answer("Action canceled", reply_markup=get_main_keyboard())
+        await message.answer(sc_info, reply_markup=get_sc_edit_keyboard(sc_id))
+
+
+@dp.message_handler(state='edit_full_confirm')
+async def confirm_edit(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    sc_id, full_text = data.get("sc_id"), data.get('full_text')
+    shortcut = await db.select_shortcut(id=sc_id)
+    if message.text == "✅ Yes":
+        await db.edit_shortcut_full_text(full_text, sc_id)
+        await state.finish()
+        await message.answer(f'The shortcut Full Text was successfully updated 🦄',
+                             reply_markup=get_main_keyboard())
+    elif message.text == "🚫 No":
+        await message.answer('Send new Full Text', reply_markup=get_cancel_keyboard())
+        await state.set_state('edit_full')
+
+    elif message.text == "❌ Cancel":
+        sc_info = f"""SHORTCUT INFO
+         \n📍Short: {shortcut.get('short')}
+         \n📍Full text: \n\n{shortcut.get('full_text')}
+         """
+        await state.finish()
+        await message.answer("Action canceled", reply_markup=get_main_keyboard())
+        await message.answer(sc_info, reply_markup=get_sc_edit_keyboard(sc_id))
