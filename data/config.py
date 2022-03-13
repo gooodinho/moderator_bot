@@ -3,6 +3,8 @@ from environs import Env
 env = Env()
 env.read_env()
 
+PER_PAGE = env.int("PER_PAGE")
+
 BOT_TOKEN = env.str("BOT_TOKEN")
 BOT_USERNAME = env.str("BOT_USERNAME")
 

@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import Union
 import asyncpg
 from asyncpg import Connection
@@ -158,3 +159,15 @@ class Database:
         sql = "SELECT * FROM Shortcuts WHERE "
         sql, parameters = self.format_args(sql, parameters=kwargs)
         return await self.execute(sql, *parameters, fetch_row=True)
+
+    async def count_shortcut_pages(self):
+        sql = "SELECT COUNT(*) FROM Shortcuts"
+        quantity = await self.execute(sql, fetch_val=True)
+        return math.ceil(quantity/config.PER_PAGE)
+
+    async def select_shortcuts_range(self, page: int):
+        sql = "SELECT * FROM Shortcuts OFFSET $1 ROWS FETCH NEXT $2 ROWS ONLY"
+        page -= 1
+        page_offset = page * config.PER_PAGE
+        parameters = (page_offset, config.PER_PAGE)
+        return await self.execute(sql, *parameters, fetch=True)

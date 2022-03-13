@@ -10,6 +10,7 @@ from keyboards.default.cancel import get_cancel_keyboard
 from keyboards.default.confirm import get_confirm_keyboard
 from keyboards.default.full_text import get_full_text_keyboard
 from keyboards.default.main import get_main_keyboard
+from keyboards.inline.shortcut_pagination import get_sc_pagination_keyboard, shortcut_callback
 from loader import dp, db
 from aiogram import types
 
@@ -74,7 +75,7 @@ async def confirm_add_shortcut(message: types.Message, state: FSMContext):
         short, full_text = data.get('short'), data.get('full_text')
         await db.add_shortcut(short, full_text)
         logging.info(f"add new shortcut - {short}")
-
+        await state.finish()
         await message.answer('The shortcut was successfully added 🎉', reply_markup=get_main_keyboard())
 
     elif message.text == "🚫 No":
@@ -88,4 +89,30 @@ async def confirm_add_shortcut(message: types.Message, state: FSMContext):
 
 @dp.message_handler(IsPrivate(), AdminFilter(), text='↙️ Show all shortcuts')
 async def show_all_shortcuts(message: types.Message):
-    pass
+    max_pages = await db.count_shortcut_pages()
+    shortcuts = await db.select_shortcuts_range(1)
+    await message.answer("All shortcuts:", reply_markup=get_sc_pagination_keyboard(shortcuts, 1, max_pages))
+    # print(f"MAX PAGE = {max_pages}")
+    # shortcuts_1 = await db.select_shortcuts_range(1)
+    # print(f"Shortcut-1: {shortcuts_1}")
+    # shortcuts_2 = await db.select_shortcuts_range(2)
+    # print(f"Shortcut-2: {shortcuts_2}")
+    # shortcuts_3 = await db.select_shortcuts_range(3)
+    # print(f"Shortcut-3: {shortcuts_3}")
+    # shortcuts_4 = await db.select_shortcuts_range(4)
+    # print(f"Shortcut-4: {shortcuts_4}")
+
+
+@dp.callback_query_handler(shortcut_callback.filter())
+async def get_new_page(call: types.CallbackQuery, callback_data: dict):
+    await call.answer(cache_time=4)
+    page = callback_data.get('page')
+    if page == "current":
+        pass
+    elif page == "delete":
+        await call.message.delete()
+    else:
+        page = int(page)
+        max_pages = await db.count_shortcut_pages()
+        shortcuts = await db.select_shortcuts_range(page)
+        await call.message.edit_reply_markup(reply_markup=get_sc_pagination_keyboard(shortcuts, page, max_pages))
