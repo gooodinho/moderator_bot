@@ -130,6 +130,41 @@ async def edit_shortcut_start(call: types.CallbackQuery, callback_data: dict):
     await call.message.edit_reply_markup(reply_markup=get_sc_edit_keyboard(sc_id))
 
 
+@dp.callback_query_handler(shortcut_info_callback.filter(action='delete'))
+async def delete_shortcut_start(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    sc_id = int(callback_data.get("id"))
+    await call.message.delete()
+    await state.set_state('delete_short_confirm')
+    await state.update_data(sc_id=sc_id)
+    await call.message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
+
+
+@dp.message_handler(state='delete_short_confirm')
+async def delete_shortcut(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    sc_id = data.get("sc_id")
+    shortcut = await db.select_shortcut(id=sc_id)
+    short = shortcut.get('short')
+    if message.text == "✅ Yes":
+        await db.delete_shortcut(sc_id, short)
+        await state.finish()
+        await message.answer(f'The shortcut was successfully deleted 🦄',
+                             reply_markup=get_main_keyboard())
+    elif message.text == "🚫 No" or message.text == "❌ Cancel":
+        sc_info = f"""SHORTCUT INFO
+         \n📍Short: {short}
+         \n📍Full text: \n\n{shortcut.get('full_text')}
+         """
+        await state.finish()
+        await message.answer("Action canceled", reply_markup=get_main_keyboard())
+        await message.answer(sc_info, reply_markup=get_sc_info_keyboard(sc_id))
+
+
+@dp.callback_query_handler(shortcut_info_callback.filter(action='back'))
+async def back_from_info(call: types.CallbackQuery, callback_data: dict):
+    pass
+
+
 @dp.callback_query_handler(shortcut_edit_callback.filter())
 async def edit_shortcut_choose(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
     to_edit = callback_data.get('to_edit')

@@ -181,3 +181,8 @@ class Database:
         sql = "UPDATE Shortcuts SET full_text=$1 WHERE id=$2"
         parameters = (full_text, sc_id)
         await self.execute(sql, *parameters, execute=True)
+
+    async def delete_shortcut(self, sc_id: int, short: str):
+        sql = "DELETE FROM Shortcuts WHERE id=$1 AND short=$2"
+        parameters = (sc_id, short)
+        await self.execute(sql, *parameters, execute=True)
