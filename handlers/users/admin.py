@@ -161,8 +161,9 @@ async def delete_shortcut(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query_handler(shortcut_info_callback.filter(action='back'))
-async def back_from_info(call: types.CallbackQuery, callback_data: dict):
-    pass
+async def back_from_info(call: types.CallbackQuery):
+    await call.message.delete()
+    await show_all_shortcuts(call.message)
 
 
 @dp.callback_query_handler(shortcut_edit_callback.filter())
