@@ -6,6 +6,7 @@ from asyncpg import Connection
 from asyncpg.pool import Pool
 from asyncpg.exceptions import UniqueViolationError
 from data import config
+from util.misc.logging import logger
 
 
 class Database:
@@ -20,6 +21,7 @@ class Database:
             host=config.DB_HOST,
             database=config.DB_NAME
         )
+        logger.info("Connection created")
 
     async def execute(self, command, *args,
                       fetch: bool = False,
@@ -51,6 +53,7 @@ class Database:
         """
 
         await self.execute(sql, execute=True)
+        logger.info("Admin table created if not existed")
 
     async def create_table_links(self):
         sql = """
@@ -61,6 +64,7 @@ class Database:
         );
         """
         await self.execute(sql, execute=True)
+        logger.info("Links table created if not existed")
 
     async def create_table_shortcuts(self):
         sql = """
@@ -71,6 +75,7 @@ class Database:
         );
         """
         await self.execute(sql, execute=True)
+        logger.info("Shortcuts table created if not existed")
 
     async def drop_table_admins(self):
         sql = "DROP TABLE Admins CASCADE"

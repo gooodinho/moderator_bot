@@ -139,7 +139,7 @@ async def delete_shortcut_start(call: types.CallbackQuery, callback_data: dict, 
     await call.message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
 
 
-@dp.message_handler(state='delete_short_confirm')
+@dp.message_handler(IsPrivate(), state='delete_short_confirm')
 async def delete_shortcut(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sc_id = data.get("sc_id")
@@ -187,7 +187,7 @@ async def edit_shortcut_choose(call: types.CallbackQuery, callback_data: dict, s
                                   reply_markup=get_cancel_keyboard())
 
 
-@dp.message_handler(state='edit_short')
+@dp.message_handler(IsPrivate(), state='edit_short')
 async def edit_short(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sc_id = data.get("sc_id")
@@ -210,7 +210,7 @@ async def edit_short(message: types.Message, state: FSMContext):
             await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
 
 
-@dp.message_handler(state='edit_full')
+@dp.message_handler(IsPrivate(), state='edit_full')
 async def edit_full(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sc_id = data.get("sc_id")
@@ -229,7 +229,7 @@ async def edit_full(message: types.Message, state: FSMContext):
         await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
 
 
-@dp.message_handler(state='edit_short_confirm')
+@dp.message_handler(IsPrivate(), state='edit_short_confirm')
 async def confirm_edit(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sc_id, short = data.get("sc_id"), data.get('short')
@@ -255,7 +255,7 @@ async def confirm_edit(message: types.Message, state: FSMContext):
         await message.answer(sc_info, reply_markup=get_sc_edit_keyboard(sc_id))
 
 
-@dp.message_handler(state='edit_full_confirm')
+@dp.message_handler(IsPrivate(), state='edit_full_confirm')
 async def confirm_edit(message: types.Message, state: FSMContext):
     data = await state.get_data()
     sc_id, full_text = data.get("sc_id"), data.get('full_text')

@@ -1,6 +1,8 @@
 # Files
 data/creds.json
 
+# Logs
+*.log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
