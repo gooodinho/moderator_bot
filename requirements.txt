@@ -1,3 +1,3 @@
-asyncpg
-aiogram
-environs
+asyncpg==0.25.0
+aiogram==2.18
+environs==9.4.0

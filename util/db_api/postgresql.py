@@ -53,7 +53,7 @@ class Database:
         """
 
         await self.execute(sql, execute=True)
-        logger.info("Admin table created if not existed")
+        logger.info("Admins table created if not existed")
 
     async def create_table_links(self):
         sql = """
@@ -80,14 +80,17 @@ class Database:
     async def drop_table_admins(self):
         sql = "DROP TABLE Admins CASCADE"
         await self.execute(sql, execute=True)
+        logger.info("Admins table was dropped")
 
     async def drop_table_links(self):
         sql = "DROP TABLE Links"
         await self.execute(sql, execute=True)
+        logger.info("Links table was dropped")
 
     async def drop_table_shortcuts(self):
         sql = "DROP TABLE Shortcuts"
         await self.execute(sql, execute=True)
+        logger.info("Shortcuts table was dropped")
 
     @staticmethod
     def format_args(sql, parameters: dict):
@@ -115,8 +118,9 @@ class Database:
         parameters = (full_name, username, telegram_id)
         try:
             await self.execute(sql, *parameters, execute=True)
+            logger.info(f"Add new admin - '{username}'")
         except UniqueViolationError:
-            logging.error(f"UniqueViolationError: Admin '{username}' already exists")
+            logger.error(f"UniqueViolationError: Admin '{username}' already exists")
 
     async def check_admin(self, telegram_id):
         sql = "SELECT EXISTS(SELECT * FROM Admins WHERE telegram_id=$1)"
@@ -133,7 +137,7 @@ class Database:
             await self.execute(sql, *parameters, execute=True)
             return True
         except UniqueViolationError:
-            logging.error(f"UniqueViolationError: Admin '{admin_id}' already has ref link")
+            logger.error(f"UniqueViolationError: Admin '{admin_id}' already has ref link")
             return False
 
     async def select_link(self, **kwargs):
@@ -157,7 +161,7 @@ class Database:
             await self.execute(sql, *parameters, execute=True)
             return True
         except UniqueViolationError:
-            logging.error(f"UniqueViolationError: f '{short}' already exists")
+            logger.error(f"UniqueViolationError: f '{short}' already exists")
             return False
 
     async def select_shortcut(self, **kwargs):
