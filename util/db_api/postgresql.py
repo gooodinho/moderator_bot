@@ -20,6 +20,7 @@ class Database:
             password=config.DB_PASS,
             host=config.DB_HOST,
             database=config.DB_NAME
+            # dsn=config.POSTGRES_URI
         )
         logger.info("Connection created")
 
