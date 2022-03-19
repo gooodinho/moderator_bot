@@ -18,6 +18,7 @@ from aiogram import types
 
 from states.new_shortcut import NewShortcut
 from util import get_random_string
+from util.misc.logging import logger
 
 
 @dp.message_handler(Command('add_admin'), IsPrivate(), AdminFilter())
@@ -30,6 +31,7 @@ async def add_admin(message: types.Message):
     if result:
         await message.answer("Your link to add a new admin, it will only work for one user.\n"
                              f"\n{ref_link}")
+        logger.info(f"Admin ({admin.get('user_name')}) has created new \'add admin\' link")
     else:
         admin_link = await db.get_admin_link(admin_id)
         await message.answer("You have already had active add link"
@@ -65,9 +67,14 @@ async def get_full_text(message: types.Message, state: FSMContext):
     elif message.text == "◀️ Back":
         await add_shortcut(message)
     else:
-        await state.update_data(full_text=message.parse_entities())
-        await NewShortcut.Confirm.set()
-        await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
+        full_text = message.parse_entities()
+        if len(full_text) >= 4096:
+            await message.answer('Full text is too long! Write something shorter')
+            logger.warning("Trying to add shortcut with too long full text!")
+        else:
+            await state.update_data(full_text=full_text)
+            await NewShortcut.Confirm.set()
+            await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
 
 
 @dp.message_handler(IsPrivate(), AdminFilter(), state=NewShortcut.Confirm)
@@ -76,7 +83,7 @@ async def confirm_add_shortcut(message: types.Message, state: FSMContext):
         data = await state.get_data()
         short, full_text = data.get('short'), data.get('full_text')
         await db.add_shortcut(short, full_text)
-        logging.info(f"add new shortcut - {short}")
+        logger.info(f"Add new shortcut ({short})")
         await state.finish()
         await message.answer('The shortcut was successfully added 🎉', reply_markup=get_main_keyboard())
 
@@ -147,6 +154,7 @@ async def delete_shortcut(message: types.Message, state: FSMContext):
     short = shortcut.get('short')
     if message.text == "✅ Yes":
         await db.delete_shortcut(sc_id, short)
+        logger.info(f'Shortcut ({short}) was deleted')
         await state.finish()
         await message.answer(f'The shortcut was successfully deleted 🦄',
                              reply_markup=get_main_keyboard())
@@ -224,9 +232,14 @@ async def edit_full(message: types.Message, state: FSMContext):
         await message.answer("Action canceled", reply_markup=get_main_keyboard())
         await message.answer(sc_info, reply_markup=get_sc_edit_keyboard(sc_id))
     else:
-        await state.update_data(full_text=message.parse_entities())
-        await state.set_state('edit_full_confirm')
-        await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
+        full_text = message.parse_entities()
+        if len(full_text) >= 4096:
+            await message.answer('Full text is too long! Write something shorter')
+            logger.warning('Trying to EDIT shortcut with too long text')
+        else:
+            await state.update_data(full_text=full_text)
+            await state.set_state('edit_full_confirm')
+            await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
 
 
 @dp.message_handler(IsPrivate(), state='edit_short_confirm')
@@ -238,6 +251,7 @@ async def confirm_edit(message: types.Message, state: FSMContext):
         await db.edit_shortcut_short(short, sc_id)
         await state.finish()
         old_short = shortcut.get("short")
+        logger.info(f'The shortcut ({old_short}->{short}) was successfully updated')
         await message.answer(f'The shortcut ({old_short}->{short}) was successfully updated 🦄',
                              reply_markup=get_main_keyboard())
 
@@ -263,6 +277,7 @@ async def confirm_edit(message: types.Message, state: FSMContext):
     if message.text == "✅ Yes":
         await db.edit_shortcut_full_text(full_text, sc_id)
         await state.finish()
+        logger.info(f'The shortcut ({shortcut.get("short")}) full text was successfully updated')
         await message.answer(f'The shortcut Full Text was successfully updated 🦄',
                              reply_markup=get_main_keyboard())
     elif message.text == "🚫 No":
