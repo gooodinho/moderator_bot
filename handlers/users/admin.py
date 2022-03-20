@@ -50,13 +50,16 @@ async def get_shortcut(message: types.Message, state: FSMContext):
         await state.finish()
         await message.answer("Action cancelled", reply_markup=get_main_keyboard())
     else:
-        exists_shortcut = await db.select_shortcut(short=message.text)
-        if exists_shortcut is not None:
-            await message.answer('This shortcut already exists. Try another one')
+        if ' ' in message.text:
+            await message.answer('Shortcut must be without spaces')
         else:
-            await state.update_data(short=message.text)
-            await message.answer('Send the text to replace the shortcut:', reply_markup=get_full_text_keyboard())
-            await NewShortcut.FullText.set()
+            exists_shortcut = await db.select_shortcut(short=message.text)
+            if exists_shortcut is not None:
+                await message.answer('This shortcut already exists. Try another one')
+            else:
+                await state.update_data(short=message.text)
+                await message.answer('Send the text to replace the shortcut:', reply_markup=get_full_text_keyboard())
+                await NewShortcut.FullText.set()
 
 
 @dp.message_handler(IsPrivate(), AdminFilter(), state=NewShortcut.FullText)
@@ -209,13 +212,16 @@ async def edit_short(message: types.Message, state: FSMContext):
         await message.answer("Action canceled", reply_markup=get_main_keyboard())
         await message.answer(sc_info, reply_markup=get_sc_edit_keyboard(sc_id))
     else:
-        shortcut = await db.select_shortcut(short=message.text)
-        if shortcut is not None:
-            await message.answer('This shortcut already exists, try another one')
+        if ' ' in message.text:
+            await message.answer('Shortcut must be without spaces')
         else:
-            await state.update_data(short=message.text)
-            await state.set_state('edit_short_confirm')
-            await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
+            shortcut = await db.select_shortcut(short=message.text)
+            if shortcut is not None:
+                await message.answer('This shortcut already exists, try another one')
+            else:
+                await state.update_data(short=message.text)
+                await state.set_state('edit_short_confirm')
+                await message.answer('Confirm the action on the keyboard', reply_markup=get_confirm_keyboard())
 
 
 @dp.message_handler(IsPrivate(), state='edit_full')
