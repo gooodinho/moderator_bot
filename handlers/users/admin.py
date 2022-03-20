@@ -31,7 +31,7 @@ async def add_admin(message: types.Message):
     if result:
         await message.answer("Your link to add a new admin, it will only work for one user.\n"
                              f"\n{ref_link}")
-        logger.info(f"Admin ({admin.get('user_name')}) has created new \'add admin\' link")
+        logger.info(f"Admin ({admin.get('username')}) has created new \'add admin\' link")
     else:
         admin_link = await db.get_admin_link(admin_id)
         await message.answer("You have already had active add link"
