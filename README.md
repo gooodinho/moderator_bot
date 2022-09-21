@@ -1,5 +1,4 @@
 ## Shortcut telegram bot created to help moderate a group
-_Created for the Axelar crypto project, as part of the Quantum Community Program_
 
 ### To use the shortcut in a group, write `!SHORTCUT`
 To use shortcuts in a group, you need to add the bot to the group and make it an administrator, with the right to delete messages.
